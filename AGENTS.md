@@ -69,7 +69,18 @@ Estados del cajero: verde = atendiendo, gris = libre, rojo = conexión fugada (n
 ## Estilo visual
 
 - Isométrico con cámara ortográfica, sombras suaves, look de maqueta limpia (referencia: demos tipo WareTrack).
-- Personajes chibi hechos de cajas (cabeza grande). Mandy es siamesa: cuerpo crema, orejas, cara, patas y cola café oscuro, ojos azules.
+- Personajes chibi de pelea, estilo beat 'em up de 8 bits llevado a 3D: cabeza grande (casi la mitad de la altura), cuerpo compacto, puños grandes, cejas marcadas y pose con actitud. Diseños originales, nunca copias de personajes existentes. Hechos con `RoundedBox`, no cubos duros.
+
+### Mandy: la mega gerente (personaje principal)
+
+Mandy no es una empleada más ni va sentada en un escritorio: tiene poderes por encima de root y vigila toda la sucursal desde arriba.
+
+- **Aspecto**: gata siamesa (cuerpo crema; orejas, cara, patas y cola café oscuro; ojos azules brillantes), chibi, más grande que los demás personajes, con capa corta y una insignia `root` dorada.
+- **Ubicación**: flota sobre una plataforma luminosa en lo alto, por encima del centro de la sucursal, con un aura suave que respira. Nunca sobre una mesa ni en una silla.
+- **Normal**: flota tranquila, mueve la cola, mira a los clientes; el aura es azul.
+- **Alerta**: el aura cambia a ámbar o rojo, gira hacia el problema y lanza un rayo de luz que marca la zona; aparece su globo con el mensaje. El ingeniero con casco corre a donde apunta el rayo.
+- **Al resolverse**: el rayo se apaga, el aura vuelve a azul y hace un pequeño gesto de aprobación.
+- Es el centro visual de la escena: lo primero que se mira.
 - Etiquetas legibles sobre cada zona, numeradas en el orden del recorrido.
 - Tema claro y oscuro. Accesible: botones reales, foco visible, respeta `prefers-reduced-motion`.
 

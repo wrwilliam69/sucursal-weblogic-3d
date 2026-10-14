@@ -59,7 +59,13 @@ Al terminar cada una, revisa el criterio de "Listo cuando", haz commit y trae el
 
 **Listo cuando:** se puede hacer clic en cada objeto y ver su panel.
 
-## Tarea 9 — Publicar
+## Tarea 9 — Darle vida
+- Aplicar la sección "Sensación de vida" de AGENTS.md: mundo exterior (calle, árboles, faroles, carros ocasionales), `RoundedBox`, `ContactShadows`, `Environment`, pines con `Float`, movimientos con springs, cámara que se desliza al objeto seleccionado e interfaz tipo vidrio.
+- Revisar que con `prefers-reduced-motion` solo queden los movimientos que informan estado.
+
+**Listo cuando:** la escena nunca se ve quieta y al hacer clic en un objeto la cámara va hacia él.
+
+## Tarea 10 — Publicar
 - GitHub Action para desplegar en GitHub Pages.
 - README con captura, la tabla de la analogía y cómo correrlo.
 
