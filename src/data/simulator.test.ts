@@ -28,6 +28,28 @@ describe('simulator', () => {
     expect(s.windows[0].state).toBe('leaked')
   })
 
+  it('onEndService recibe el reqId real del cliente', () => {
+    const s = createSimState()
+    setScenario(s, 'normal')
+    let receivedReqId: number | null = null
+    const hooks = {
+      canServe: () => true,
+      onEndService: (id: number) => {
+        receivedReqId = id
+      }
+    }
+    s.spawnT = -1
+    simStep(s, 0.01, hooks, () => 0) // spawn + assign
+    const reqId = s.windows[0].reqId
+    // evitar que en el mismo paso entre otra petición a la ventanilla
+    s.spawnT = 1000
+    s.waiting = []
+    simStep(s, 10, hooks, () => 0) // termina
+    expect(receivedReqId).toBe(reqId)
+    expect(receivedReqId).not.toBe(0)
+    expect(s.windows[0].state).toBe('idle')
+  })
+
   it('metrics calcula correctamente', () => {
     const s = createSimState()
     s.windows[0].state = 'busy'

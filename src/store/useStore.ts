@@ -1,10 +1,33 @@
 import { create } from 'zustand'
-import { createSimState, metrics as simMetrics, simStep, setScenario, resetAll } from '../data/simulator'
-import { computeAlert } from '../data/alerts'
+import type { MetricsSource } from '../data/source'
+import { SimulatorSource } from '../data/source'
 import type { Metrics, Alert, ScenarioName } from '../data/types'
 
-interface SimInternal {
-  simState: ReturnType<typeof createSimState>
+const EMPTY_METRICS: Metrics = {
+  ActiveConnectionsCurrentCount: 0,
+  CurrCapacity: 0,
+  NumAvailable: 0,
+  WaitingForConnectionCurrentCount: 0,
+  LeakedConnectionCount: 0,
+  ActiveConnectionsHighCount: 0,
+  QueueLength: 0,
+  ExecuteThreadIdleCount: 0,
+  HoggingThreadCount: 0,
+  StuckThreadCount: 0,
+  MessagesCurrentCount: 0,
+  MessagesPendingCount: 0,
+  MessagesReceivedCount: 0,
+  ConsumersCurrentCount: 0,
+  ErrorMessagesCurrentCount: 0
+}
+
+const OK_ALERT: Alert = {
+  level: 'ok',
+  who: 'Mandy · gerente',
+  message: 'Todo en orden en la sucursal.',
+  runbook: '',
+  engineer: '',
+  at: { x: 0, y: 0, z: 0 }
 }
 
 interface StoreState {
@@ -12,66 +35,46 @@ interface StoreState {
   alert: Alert
   scenario: ScenarioName
   running: boolean
+  source: MetricsSource
   setScenario: (sc: ScenarioName) => void
   reset: () => void
   start: () => void
   stop: () => void
-  tick: (dt: number) => void
+  setSource: (src: MetricsSource) => void
 }
 
-let interval: number | null = null
+const defaultSource = new SimulatorSource()
 
-export const useStore = create<StoreState>((set, get) => {
-  const internal: SimInternal = {
-    simState: createSimState()
+export const useStore = create<StoreState>((set, get) => ({
+  metrics: EMPTY_METRICS,
+  alert: OK_ALERT,
+  scenario: 'normal',
+  running: false,
+  source: defaultSource,
+  setScenario: (sc: ScenarioName) => {
+    get().source.setScenario(sc)
+  },
+  reset: () => {
+    get().source.reset()
+  },
+  start: () => {
+    if (get().running) return
+    set({ running: true })
+    get().source.start()
+  },
+  stop: () => {
+    set({ running: false })
+    get().source.stop()
+  },
+  setSource: (src: MetricsSource) => {
+    activeUnsub?.()
+    set({ source: src, running: false })
+    activeUnsub = src.subscribe(({ metrics, alert, scenario }) => {
+      useStore.setState({ metrics, alert, scenario })
+    })
   }
+}))
 
-  const compute = () => {
-    const m = simMetrics(internal.simState)
-    const leakedIdx = internal.simState.windows.findIndex(w => w.state === 'leaked')
-    const alert = computeAlert(m, { leakedIndex: leakedIdx, mdbUp: internal.simState.mdbUp })
-    return { m, alert, scenario: internal.simState.scenario }
-  }
-
-  const initial = compute()
-
-  return {
-    metrics: initial.m,
-    alert: initial.alert,
-    scenario: initial.scenario,
-    running: false,
-    setScenario: (sc: ScenarioName) => {
-      setScenario(internal.simState, sc)
-      const next = compute()
-      set(next)
-    },
-    reset: () => {
-      resetAll(internal.simState)
-      const next = compute()
-      set(next)
-    },
-    tick: (dt: number) => {
-      simStep(internal.simState, dt)
-      const next = compute()
-      set(next)
-    },
-    start: () => {
-      if (get().running) return
-      set({ running: true })
-      if (interval !== null) {
-        window.clearInterval(interval)
-        interval = null
-      }
-      interval = window.setInterval(() => {
-        get().tick(0.05)
-      }, 50)
-    },
-    stop: () => {
-      set({ running: false })
-      if (interval !== null) {
-        window.clearInterval(interval)
-        interval = null
-      }
-    }
-  }
+let activeUnsub: (() => void) | null = defaultSource.subscribe(({ metrics, alert, scenario }) => {
+  useStore.setState({ metrics, alert, scenario })
 })

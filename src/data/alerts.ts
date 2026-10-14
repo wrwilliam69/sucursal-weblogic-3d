@@ -1,7 +1,7 @@
 import type { Alert, Metrics, ScenePoint } from './types'
 
-export const ENG_HOME: ScenePoint = { x: 4.4, y: 0, z: 3.6 }
-export const WIN_X = (i: number) => -4.5 + i * 1.6
+import { WIN_X, ENG_HOME } from './layout'
+export { WIN_X, ENG_HOME } from './layout'
 
 export interface AlertCtx {
   leakedIndex: number
@@ -10,7 +10,7 @@ export interface AlertCtx {
 
 export const computeAlert = (metrics: Metrics, ctx: AlertCtx): Alert => {
   if (metrics.LeakedConnectionCount > 0) {
-    const leakedIdx = ctx.leakedIndex >= 0 ? ctx.leakedIndex : metrics.LeakedConnectionCount > 0 ? 0 : -1
+    const leakedIdx = ctx.leakedIndex >= 0 ? ctx.leakedIndex : 0
     const at: ScenePoint = { x: WIN_X(leakedIdx), y: 0, z: 0.2 }
     return {
       level: 'crit',
@@ -49,6 +49,6 @@ export const computeAlert = (metrics: Metrics, ctx: AlertCtx): Alert => {
     message: 'Todo en orden en la sucursal.',
     runbook: '',
     engineer: '',
-    at: ENG_HOME
+    at: { ...ENG_HOME }
   }
 }

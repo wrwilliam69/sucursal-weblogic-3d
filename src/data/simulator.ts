@@ -2,8 +2,6 @@ import type { Metrics, ScenarioName, WindowState } from './types'
 
 export const POOL_MAX = 6
 export const THREADS = 12
-export const WIN_X = (i: number) => -4.5 + i * 1.6
-
 export interface Window {
   state: WindowState
   reqId: number | null
@@ -97,8 +95,8 @@ export const setScenario = (state: SimState, sc: ScenarioName) => {
   }
 }
 
-export const resetAll = (state: SimState, rand: () => number = Math.random) => {
-  setScenario(state, 'reset', rand)
+export const resetAll = (state: SimState) => {
+  setScenario(state, 'reset')
 }
 
 export const metrics = (state: SimState): Metrics => {
@@ -140,6 +138,7 @@ export const simStep = (state: SimState, dt: number, hooks: SimHooks = {}, rand:
     if (w.state === 'busy') {
       w.t -= dt
       if (w.t <= 0) {
+        const endedReqId = w.reqId
         const leak = state.leakNext > 0
         if (leak) {
           state.leakNext--
@@ -159,8 +158,7 @@ export const simStep = (state: SimState, dt: number, hooks: SimHooks = {}, rand:
           state.jms++
         }
         const wIdx = state.windows.indexOf(w)
-        const reqId = w.reqId
-        hooks.onEndService?.(reqId ?? 0, wIdx, msg)
+        hooks.onEndService?.(endedReqId ?? 0, wIdx, msg)
       }
     }
   })
@@ -188,13 +186,12 @@ export const simStep = (state: SimState, dt: number, hooks: SimHooks = {}, rand:
 
   if (state.mdbUp) {
     state.inFlight = state.jms > 0 ? 1 : 0
+    state.mdbT -= dt
     if (state.mdbT <= 0 && state.jms > 0) {
       state.mdbT = 0.9
       state.jms--
       state.jmsReceived++
-      if (state.mdbT > 0) state.mdbT -= dt // keep approximate; but per step
     }
-    state.mdbT -= dt
   } else {
     state.inFlight = 0
     state.redeliverT -= dt
