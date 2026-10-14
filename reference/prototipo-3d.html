@@ -1,0 +1,643 @@
+<title>Sucursal WebLogic 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: header strip; stage (3D) beside a detail panel, stacking on phones; scenario dock under the stage */
+  :root {
+    --bg: #edf1f6;
+    --stage: #dfe7f1;
+    --panel: #ffffff;
+    --ink: #1b2333;
+    --muted: #5d6a80;
+    --line: #d2dbe7;
+    --accent: #2f63d6;
+    --accent-soft: #e3ebfb;
+    --ok: #1f9d6b; --warn: #c98a08; --crit: #d63a3f;
+    --ok-soft: #dcf3e9; --warn-soft: #fbefd2; --crit-soft: #fbe1e1;
+    --font-display: 'Chakra Petch', 'Trebuchet MS', sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121722; --stage: #1a2231; --panel: #1c2433; --ink: #e7ecf4; --muted: #9aa6ba;
+      --line: #2c374b; --accent: #6f9bff; --accent-soft: #23314f;
+      --ok: #44c98f; --warn: #e9b53e; --crit: #ff6b6f;
+      --ok-soft: #173528; --warn-soft: #3a2f12; --crit-soft: #3d1c1e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121722; --stage: #1a2231; --panel: #1c2433; --ink: #e7ecf4; --muted: #9aa6ba;
+    --line: #2c374b; --accent: #6f9bff; --accent-soft: #23314f;
+    --ok: #44c98f; --warn: #e9b53e; --crit: #ff6b6f;
+    --ok-soft: #173528; --warn-soft: #3a2f12; --crit-soft: #3d1c1e;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--font-body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 14px; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(20px, 3vw, 28px); letter-spacing: 0.02em; text-wrap: balance; }
+  .server { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
+  .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .main { flex: 1; display: flex; flex-wrap: wrap; gap: 12px; min-height: 0; }
+  .stagecol { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .stage { position: relative; flex: 1; min-height: 420px; background: var(--stage); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: f; }
+  .flow li { counter-increment: f; display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 10px 6px 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+  .flow li::before { content: counter(f); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 12px; }
+  .kpi .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .kpi .val { font-family: var(--font-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .kpi[data-s="warn"] .val { color: var(--warn); }
+  .kpi[data-s="crit"] .val { color: var(--crit); }
+  .tags { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .tag { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; font-size: 13px; font-weight: 700; padding: 5px 10px 5px 5px; border-radius: 999px; background: #1b2333; color: #ffffff; box-shadow: 0 3px 10px rgb(0 0 0 / 0.25); display: flex; align-items: center; gap: 6px; z-index: 2; }
+  .tag i { font-style: normal; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #2f63d6; font-size: 11px; }
+  .tag::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 2px; height: 6px; background: #1b2333; }
+  .bubble.eng { border-color: var(--accent); }
+  .bubble { position: absolute; transform: translate(-50%, -100%); max-width: 240px; white-space: normal; font-size: 13px; line-height: 1.35; padding: 10px 12px; border-radius: 10px; background: var(--panel); border: 2px solid var(--ok); color: var(--ink); box-shadow: 0 4px 14px rgb(0 0 0 / 0.14); }
+  .bubble b { display: block; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; }
+  .bubble[data-s="warn"] { border-color: var(--warn); }
+  .bubble[data-s="crit"] { border-color: var(--crit); }
+  .hint { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+  .dock { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: var(--font-body); font-weight: 600; font-size: 14px;
+    min-height: 44px; padding: 0 16px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  }
+  button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  aside { flex: 1 1 280px; min-width: 0; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; }
+  aside .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  aside h2 { margin: 0; font-family: var(--font-display); font-size: 20px; text-wrap: balance; }
+  .state { align-self: flex-start; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+  .state[data-s="ok"] { background: var(--ok-soft); color: var(--ok); }
+  .state[data-s="warn"] { background: var(--warn-soft); color: var(--warn); }
+  .state[data-s="crit"] { background: var(--crit-soft); color: var(--crit); }
+  .state[data-s="idle"] { background: var(--accent-soft); color: var(--accent); }
+  .desc { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .metrics { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
+  .metric { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .metric span:first-child { font-family: var(--font-mono); font-size: 12px; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+  .metric span:last-child { font-family: var(--font-mono); font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .runbook { background: var(--accent-soft); border-radius: 10px; padding: 12px; font-size: 13px; line-height: 1.5; }
+  .runbook b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 4px; }
+  .note { font-size: 12px; color: var(--muted); margin: 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header>
+  <div class="brand">
+    <h1>Sucursal WebLogic</h1>
+    <span class="server">ms1 · ds-sucursal · datos simulados</span>
+  </div>
+  <span class="live" id="live">Operación normal</span>
+</header>
+
+<div class="main">
+  <div class="stagecol">
+    <div class="kpis" id="kpis"></div>
+    <div class="stage" id="stage">
+      <canvas id="c" aria-label="Sucursal bancaria en 3D que representa un servidor WebLogic"></canvas>
+      <div class="tags" id="tags"></div>
+      <div class="hint">Clic en un objeto para ver su estado · arrastra para girar</div>
+    </div>
+    <div class="dock" role="group" aria-label="Escenarios de prueba">
+      <button type="button" data-sc="normal" aria-pressed="true">Normal</button>
+      <button type="button" data-sc="peak" aria-pressed="false">Hora pico</button>
+      <button type="button" data-sc="leak" aria-pressed="false">Fuga de conexiones</button>
+      <button type="button" data-sc="mdb" aria-pressed="false">Consumidor JMS caído</button>
+      <button type="button" id="reset">Restablecer</button>
+    </div>
+    <ol class="flow" aria-label="Cómo leer la sucursal">
+      <li>Cliente = petición que llega</li>
+      <li>Fila = espera en el Work Manager</li>
+      <li>Cajero = conexión del pool JDBC</li>
+      <li>Bóveda = base de datos</li>
+      <li>Sobre = mensaje en la cola JMS</li>
+      <li>MDB = quien procesa los sobres</li>
+    </ol>
+  </div>
+  <aside aria-live="polite">
+    <div class="eyebrow" id="p-eyebrow"></div>
+    <h2 id="p-title"></h2>
+    <span class="state" id="p-state"></span>
+    <p class="desc" id="p-desc"></p>
+    <div class="metrics" id="p-metrics"></div>
+    <div class="runbook" id="p-runbook" hidden><b>Paso del runbook</b><span id="p-runbook-text"></span></div>
+    <p class="note">Métricas con nombres de MBeans de WebLogic. Valores simulados; la vista solo lee el modelo de datos.</p>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  /* ===================== 1. MODELO DE DATOS (simulado) ===================== */
+  const POOL_MAX = 6, THREADS = 12;
+  const sim = {
+    scenario: 'normal',
+    arrivalEvery: 1.6, serviceMin: 3, serviceMax: 5, mdbUp: true, leakNext: 0,
+    windows: Array.from({ length: POOL_MAX }, () => ({ state: 'idle', reqId: null, t: 0, busySince: 0 })),
+    waiting: [],            // ids de peticiones esperando conexión
+    jms: 0, jmsReceived: 0, errorQ: 0, inFlight: 0,
+    activeHigh: 0, nextId: 1, spawnT: 0, mdbT: 0, redeliverT: 0, served: 0
+  };
+  const metrics = () => {
+    const active = sim.windows.filter(w => w.state === 'busy').length;
+    const leaked = sim.windows.filter(w => w.state === 'leaked').length;
+    const waiting = sim.waiting.length;
+    return {
+      ActiveConnectionsCurrentCount: active + leaked,
+      CurrCapacity: POOL_MAX,
+      WaitingForConnectionCurrentCount: waiting,
+      LeakedConnectionCount: leaked,
+      ActiveConnectionsHighCount: sim.activeHigh,
+      NumAvailable: POOL_MAX - active - leaked,
+      StuckThreadCount: leaked,
+      HoggingThreadCount: Math.max(0, waiting - 3),
+      ExecuteThreadIdleCount: Math.max(0, THREADS - active - leaked - Math.min(waiting, THREADS)),
+      QueueLength: waiting,
+      MessagesCurrentCount: sim.jms,
+      MessagesPendingCount: sim.inFlight,
+      MessagesReceivedCount: sim.jmsReceived,
+      ConsumersCurrentCount: sim.mdbUp ? 1 : 0,
+      ErrorMessagesCurrentCount: sim.errorQ
+    };
+  };
+  const events = { onArrive: null, onStartService: null, onEndService: null };
+
+  function setScenario(sc) {
+    sim.scenario = sc;
+    sim.arrivalEvery = sc === 'peak' ? 0.45 : 1.6;
+    sim.mdbUp = sc !== 'mdb';
+    if (sc === 'leak') sim.leakNext = 3;
+  }
+  function resetAll() {
+    setScenario('normal');
+    sim.windows.forEach(w => { if (w.state === 'leaked') { w.state = 'idle'; w.reqId = null; } });
+    sim.errorQ = 0; sim.leakNext = 0;
+  }
+  function simStep(dt) {
+    sim.spawnT -= dt;
+    if (sim.spawnT <= 0) {
+      sim.spawnT = sim.arrivalEvery * rand(0.6, 1.4);
+      if (sim.waiting.length < 14) { const id = sim.nextId++; sim.waiting.push(id); events.onArrive && events.onArrive(id); }
+    }
+    sim.windows.forEach((w, i) => {
+      if (w.state === 'busy') {
+        w.t -= dt;
+        if (w.t <= 0) {
+          const id = w.reqId;
+          const leak = sim.leakNext > 0;
+          if (leak) { sim.leakNext--; w.state = 'leaked'; } else { w.state = 'idle'; w.reqId = null; }
+          sim.served++;
+          const msg = Math.random() < 0.45;
+          if (msg) sim.jms++;
+          events.onEndService && events.onEndService(id, i, msg);
+        }
+      }
+    });
+    sim.windows.forEach((w, i) => {
+      if (w.state === 'idle' && sim.waiting.length && events.canServe(sim.waiting[0])) {
+        const id = sim.waiting.shift();
+        w.state = 'busy'; w.reqId = id; w.t = rand(sim.serviceMin, sim.serviceMax);
+        events.onStartService && events.onStartService(id, i);
+      }
+    });
+    const m = metrics();
+    sim.activeHigh = Math.max(sim.activeHigh, m.ActiveConnectionsCurrentCount);
+    if (sim.mdbUp) {
+      sim.mdbT -= dt;
+      sim.inFlight = sim.jms > 0 ? 1 : 0;
+      if (sim.mdbT <= 0 && sim.jms > 0) { sim.mdbT = 0.9; sim.jms--; sim.jmsReceived++; }
+    } else {
+      sim.inFlight = 0;
+      sim.redeliverT -= dt;
+      if (sim.redeliverT <= 0 && sim.jms > 6) { sim.redeliverT = 5; sim.jms--; sim.errorQ++; }
+    }
+  }
+
+  /* ===================== 2. VISTA 3D ===================== */
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
+  cam.position.set(14, 14, 16); cam.lookAt(0, 0, 0);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8d9ab0, 0.8));
+  const sun = new THREE.DirectionalLight(0xfff6ea, 0.75);
+  sun.position.set(8, 16, 10); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 50 });
+  scene.add(sun);
+  const world = new THREE.Group(); scene.add(world);
+
+  const matCache = {};
+  const mat = (hex) => matCache[hex] || (matCache[hex] = new THREE.MeshStandardMaterial({ color: hex, roughness: 0.8, flatShading: true }));
+  function box(w, h, d, color, x, y, z, parent, own) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), own ? new THREE.MeshStandardMaterial({ color, roughness: 0.6, flatShading: true }) : mat(color));
+    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+    (parent || world).add(m); return m;
+  }
+  const pickables = [];
+  function pickable(obj, kind, idx) { obj.traverse(o => { if (o.isMesh) { o.userData.kind = kind; o.userData.idx = idx; pickables.push(o); } }); }
+
+  // piso y muros (corte tipo maqueta)
+  const floor = box(15, 0.3, 10.5, 0xe9eef5, 0, -0.15, -0.25); floor.castShadow = false;
+  for (let x = -7; x <= 7; x += 1) box(0.04, 0.01, 10.4, 0xd6dee9, x, 0.01, -0.25).castShadow = false;
+  box(15, 2.6, 0.3, 0xc9d6e8, 0, 1.3, -5.35);
+  box(0.3, 2.6, 10.5, 0xbfcde2, -7.35, 1.3, -0.25);
+  box(15, 0.25, 0.32, 0x3f6fd6, 0, 2.6, -5.35);
+  box(0.32, 0.25, 10.5, 0x3f6fd6, -7.35, 2.6, -0.25);
+  // letrero
+  box(4.4, 0.7, 0.12, 0x24407e, -2, 2.0, -5.15);
+  // entrada
+  box(1.6, 0.04, 1.6, 0x9fb4d6, -6.4, 0.02, 4.1).castShadow = false;
+  box(0.2, 1.6, 0.2, 0x3f6fd6, -7.1, 0.8, 4.9); box(0.2, 1.6, 0.2, 0x3f6fd6, -5.7, 0.8, 4.9);
+  box(1.6, 0.2, 0.2, 0x3f6fd6, -6.4, 1.7, 4.9);
+  // plantas
+  [[-6.6, -4.6], [6.6, 4.4]].forEach(([x, z]) => { box(0.5, 0.5, 0.5, 0xb98a5a, x, 0.25, z); box(0.6, 0.7, 0.6, 0x3e9b68, x, 0.85, z); });
+
+  // personas chibi
+  const SHIRTS = [0xe07a4f, 0x7a5cd6, 0x2f9d8f, 0xd84f7b, 0x5b8de0, 0xe0b04f, 0x6aa84f];
+  const HAIRS = [0x2b1a12, 0x6e3b1f, 0xd9a441, 0x1e1e28, 0xa34a2a];
+  function person(shirt, hair, parent, opts) {
+    const g = new THREE.Group();
+    box(0.14, 0.32, 0.18, 0x3b3f55, -0.09, 0.16, 0, g); box(0.14, 0.32, 0.18, 0x3b3f55, 0.09, 0.16, 0, g);
+    box(0.42, 0.4, 0.26, shirt, 0, 0.52, 0, g);
+    box(0.4, 0.38, 0.38, 0xf0c39c, 0, 0.92, 0, g);
+    box(0.44, 0.14, 0.42, hair, 0, 1.14, -0.02, g);
+    box(0.06, 0.08, 0.02, 0x1e1628, -0.09, 0.94, 0.2, g); box(0.06, 0.08, 0.02, 0x1e1628, 0.09, 0.94, 0.2, g);
+    if (opts && opts.helmet) {
+      box(0.5, 0.16, 0.48, 0xf2c230, 0, 1.18, 0, g); box(0.56, 0.04, 0.56, 0xf2c230, 0, 1.1, 0.06, g);
+      box(0.44, 0.16, 0.28, 0xff8a2a, 0, 0.62, 0, g);
+    }
+    (parent || world).add(g); return g;
+  }
+
+  // mostrador y ventanillas (pool JDBC)
+  const WIN_X = i => -4.5 + i * 1.6;
+  box(10.2, 0.9, 0.7, 0xf4f6fa, -0.5, 0.45, -1.4);
+  box(10.2, 0.08, 0.8, 0x3f6fd6, -0.5, 0.94, -1.4);
+  const windows = [];
+  for (let i = 0; i < POOL_MAX; i++) {
+    const g = new THREE.Group(); world.add(g);
+    const x = WIN_X(i);
+    box(0.08, 0.8, 0.5, 0xc4d1e4, x - 0.78, 1.38, -1.4, g);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.7, 0.04), new THREE.MeshStandardMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.35 }));
+    glass.position.set(x, 1.35, -1.25); g.add(glass);
+    const sign = box(0.9, 0.26, 0.08, 0x9aa8ba, x, 1.95, -1.4, g, true);
+    const cashier = person(0x2f63d6, HAIRS[i % HAIRS.length], g); cashier.position.set(x, 0, -2.3);
+    const folder = box(0.3, 0.06, 0.22, 0xd63a3f, x + 0.22, 0.98, -1.75, g); folder.visible = false;
+    const packet = box(0.16, 0.16, 0.16, 0x36b37e, x, 0.5, -2.8, g, true); packet.visible = false;
+    pickable(g, 'window', i);
+    windows.push({ sign, cashier, folder, packet, x });
+  }
+
+  // bóveda (base de datos)
+  const vault = new THREE.Group(); world.add(vault);
+  box(3.2, 2.0, 1.2, 0x8c98ad, 2.6, 1.0, -4.5, vault);
+  const vdoor = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.14, 20), mat(0xc4cbd8));
+  vdoor.rotation.x = Math.PI / 2; vdoor.position.set(2.6, 1.05, -3.85); vdoor.castShadow = true; vault.add(vdoor);
+  const wheel = box(0.7, 0.08, 0.08, 0x5d6a80, 2.6, 1.05, -3.75, vault);
+  box(0.08, 0.7, 0.08, 0x5d6a80, 2.6, 1.05, -3.75, vault);
+  pickable(vault, 'vault', 0);
+
+  // buzón JMS con banda, MDB, file store y cola de error
+  const jmsG = new THREE.Group(); world.add(jmsG);
+  box(0.9, 1.1, 0.9, 0x3f6fd6, 5.6, 0.55, 2.0, jmsG);
+  box(0.6, 0.08, 0.1, 0x1b2333, 5.6, 0.9, 2.46, jmsG);
+  box(0.8, 0.35, 4.0, 0x5d6a80, 5.6, 0.18, -0.4, jmsG);
+  box(0.84, 0.04, 4.0, 0x2b3242, 5.6, 0.37, -0.4, jmsG);
+  pickable(jmsG, 'jms', 0);
+  const mdbG = new THREE.Group(); world.add(mdbG);
+  box(1.3, 0.75, 0.8, 0xf4f6fa, 5.6, 0.38, -3.2, mdbG);
+  const mdbWorker = person(0x6aa84f, 0x1e1e28, mdbG); mdbWorker.position.set(5.6, 0, -4.0);
+  const mdbLamp = box(0.22, 0.22, 0.22, 0x36b37e, 6.1, 0.9, -3.2, mdbG, true);
+  pickable(mdbG, 'mdb', 0);
+  const storeG = new THREE.Group(); world.add(storeG);
+  box(0.7, 1.4, 0.6, 0xa7b3c6, 6.7, 0.7, 2.0, storeG);
+  [0.35, 0.75, 1.15].forEach(y => box(0.5, 0.04, 0.04, 0x5d6a80, 6.7, y, 2.32, storeG));
+  pickable(storeG, 'store', 0);
+  const errG = new THREE.Group(); world.add(errG);
+  box(0.8, 0.7, 0.8, 0xd63a3f, 6.7, 0.35, -1.4, errG);
+  box(0.86, 0.08, 0.86, 0x9e2329, 6.7, 0.72, -1.4, errG);
+  pickable(errG, 'error', 0);
+  const envelopes = [];
+  for (let i = 0; i < 18; i++) { const e = box(0.4, 0.08, 0.28, 0xf6f1df, 5.6, 0.44, 1.2 - i * 0.22, null); e.visible = false; envelopes.push(e); }
+  const errEnvs = [];
+  for (let i = 0; i < 6; i++) { const e = box(0.36, 0.06, 0.26, 0xf6f1df, 6.7, 0.8 + i * 0.07, -1.4, null); e.rotation.y = i * 0.4; e.visible = false; errEnvs.push(e); }
+
+  // zona de fila (Work Manager)
+  const lobbyG = new THREE.Group(); world.add(lobbyG);
+  const kiosk = box(0.5, 1.2, 0.4, 0x24407e, -6.2, 0.6, 1.2, lobbyG);
+  box(0.4, 0.3, 0.05, 0x9fd0ff, -6.2, 1.0, 1.42, lobbyG);
+  const rope = [];
+  for (let i = 0; i < 5; i++) rope.push(box(0.08, 0.7, 0.08, 0xc9a24a, -5.2 + i * 1.6, 0.35, 0.9, lobbyG));
+  box(6.5, 0.04, 0.04, 0xd63a3f, -2, 0.62, 0.9, lobbyG);
+  const lobbyFloor = box(9, 0.02, 3.2, 0xdde6f2, -1.9, 0.02, 2.6, lobbyG); lobbyFloor.castShadow = false;
+  pickable(lobbyG, 'lobby', 0);
+
+  // escritorio de gerencia: Mandy (siamesa) y el ingeniero
+  const deskG = new THREE.Group(); world.add(deskG);
+  box(2.0, 0.75, 1.0, 0x8a5a3a, 3.0, 0.38, 3.3, deskG);
+  box(2.1, 0.08, 1.1, 0xa8714a, 3.0, 0.78, 3.3, deskG);
+  box(0.5, 0.36, 0.06, 0x1b2333, 3.6, 1.0, 3.0, deskG);
+  const mandy = new THREE.Group(); mandy.position.set(2.5, 0.82, 3.35); deskG.add(mandy);
+  const CREAM = 0xefe2c8, POINT = 0x4a3428;
+  box(0.5, 0.42, 0.62, CREAM, 0, 0.22, 0, mandy);
+  box(0.14, 0.12, 0.14, POINT, -0.14, 0.06, 0.26, mandy); box(0.14, 0.12, 0.14, POINT, 0.14, 0.06, 0.26, mandy);
+  const mHead = new THREE.Group(); mHead.position.set(0, 0.62, 0.18); mandy.add(mHead);
+  box(0.5, 0.42, 0.44, CREAM, 0, 0, 0, mHead);
+  box(0.3, 0.24, 0.06, POINT, 0, -0.05, 0.22, mHead);
+  box(0.1, 0.08, 0.03, 0x3a8ee6, -0.12, 0.05, 0.255, mHead); box(0.1, 0.08, 0.03, 0x3a8ee6, 0.12, 0.05, 0.255, mHead);
+  box(0.06, 0.04, 0.03, 0xe9a0a6, 0, -0.08, 0.265, mHead);
+  const earGeo = new THREE.ConeGeometry(0.11, 0.2, 4);
+  [-0.15, 0.15].forEach(x => { const e = new THREE.Mesh(earGeo, mat(POINT)); e.position.set(x, 0.3, 0); e.rotation.y = Math.PI / 4; e.castShadow = true; mHead.add(e); });
+  const mTail = new THREE.Group(); mTail.position.set(0.18, 0.1, -0.3); mandy.add(mTail);
+  box(0.1, 0.1, 0.5, POINT, 0, 0, -0.22, mTail);
+  pickable(mandy, 'mandy', 0);
+  const eng = person(0x3b5bab, 0x2b1a12, null, { helmet: true }); eng.position.set(4.4, 0, 3.6); eng.rotation.y = -0.5;
+  pickable(eng, 'engineer', 0);
+
+  // clientes (peticiones)
+  const DOOR = new THREE.Vector3(-6.4, 0, 5.6), INSIDE = new THREE.Vector3(-6.4, 0, 3.6);
+  const qSlot = i => new THREE.Vector3(-5.4 + (i % 7) * 0.85, 0, 1.8 + Math.floor(i / 7) * 0.9);
+  const people = new Map();
+  events.canServe = (id) => { const p = people.get(id); return !p || p.mode === 'queue'; };
+  events.onArrive = (id) => {
+    const g = person(SHIRTS[id % SHIRTS.length], HAIRS[(id * 3) % HAIRS.length]);
+    g.position.copy(DOOR);
+    people.set(id, { g, mode: 'enter', path: [INSIDE.clone()], speed: 2.4 });
+  };
+  events.onStartService = (id, i) => {
+    const p = people.get(id); if (!p) return;
+    p.mode = 'toWindow'; p.path = [new THREE.Vector3(WIN_X(i), 0, -0.6)];
+  };
+  events.onEndService = (id, i, msg) => {
+    const p = people.get(id); if (!p) return;
+    p.mode = 'leave';
+    p.path = msg ? [new THREE.Vector3(5.0, 0, 2.9), new THREE.Vector3(1.0, 0, 4.6), DOOR.clone()] : [new THREE.Vector3(WIN_X(i), 0, 0.3), new THREE.Vector3(-4.0, 0, 4.6), DOOR.clone()];
+    p.speed = 2.8;
+  };
+
+  function movePeople(dt, t) {
+    const qIdx = new Map(sim.waiting.map((id, k) => [id, k]));
+    people.forEach((p, id) => {
+      if ((p.mode === 'enter' && !p.path.length) || p.mode === 'queue') {
+        p.mode = 'queue';
+        const k = qIdx.get(id);
+        if (k !== undefined) p.path = [qSlot(k)];
+      }
+      const target = p.path[0];
+      if (target) {
+        const d = target.clone().sub(p.g.position); d.y = 0;
+        const len = d.length();
+        const step = p.speed * dt;
+        if (len <= step) { p.g.position.copy(target); p.path.shift(); }
+        else { d.multiplyScalar(step / len); p.g.position.add(d); p.g.rotation.y = Math.atan2(d.x, d.z); }
+        p.g.position.y = reduce ? 0 : Math.abs(Math.sin(t * 12 + id)) * 0.06;
+      } else {
+        p.g.position.y = 0;
+        if (p.mode === 'toWindow') p.g.rotation.y = Math.PI;
+        if (p.mode === 'queue') p.g.rotation.y = Math.PI * 0.75;
+      }
+      if (p.mode === 'leave' && !p.path.length) { world.remove(p.g); people.delete(id); }
+    });
+  }
+
+  /* ===================== 3. UI: KPIs, etiquetas, panel ===================== */
+  const tagsEl = document.getElementById('tags');
+  const TAGS = [
+    { n: 1, text: 'Entrada', pos: new THREE.Vector3(-6.4, 2.2, 4.9) },
+    { n: 2, text: 'Fila · Work Manager', pos: new THREE.Vector3(-3.4, 1.4, 2.2) },
+    { n: 3, text: 'Ventanillas · Pool JDBC', pos: new THREE.Vector3(-0.5, 2.6, -1.4) },
+    { n: 4, text: 'Bóveda · Base de datos', pos: new THREE.Vector3(2.6, 2.6, -4.5) },
+    { n: 5, text: 'Buzón · Cola JMS', pos: new THREE.Vector3(5.6, 1.7, 2.0) },
+    { n: 6, text: 'MDB', pos: new THREE.Vector3(5.6, 1.9, -3.6) },
+    { n: '!', text: 'Cola de error', pos: new THREE.Vector3(6.7, 1.3, -1.4) }
+  ].map(o => { const el = document.createElement('div'); el.className = 'tag'; el.innerHTML = `<i>${o.n}</i>${o.text}`; tagsEl.appendChild(el); return { ...o, el }; });
+  const bubble = document.createElement('div'); bubble.className = 'bubble'; tagsEl.appendChild(bubble);
+  const bubblePos = new THREE.Vector3(2.5, 2.3, 3.35);
+  const engBubble = document.createElement('div'); engBubble.className = 'bubble eng'; engBubble.hidden = true; tagsEl.appendChild(engBubble);
+  const ENG_HOME = new THREE.Vector3(4.4, 0, 3.6);
+
+  function alertState(m) {
+    const leakedIdx = sim.windows.findIndex(w => w.state === 'leaked');
+    if (m.LeakedConnectionCount > 0) return { s: 'crit', who: 'Mandy · gerente', msg: `Hay ${m.LeakedConnectionCount} cajero${m.LeakedConnectionCount > 1 ? 's' : ''} que no suelta${m.LeakedConnectionCount > 1 ? 'n' : ''} la conexión.`, rb: 'Revisa LeakedConnectionCount, activa Inactive Connection Timeout en el Data Source y busca el código que no cierra la conexión.', at: new THREE.Vector3(WIN_X(leakedIdx), 0, 0.2), eng: `Voy a la ventanilla ${leakedIdx + 1}: esa conexión no volvió al pool. Activo Inactive Connection Timeout.` };
+    if (!sim.mdbUp && m.MessagesCurrentCount > 4) return { s: 'crit', who: 'Mandy · gerente', msg: `La correspondencia se acumula: ${m.MessagesCurrentCount} mensajes sin procesar.`, rb: 'ConsumersCurrentCount está en 0. Verifica que el MDB esté desplegado y activo, y revisa la cola de error.', at: new THREE.Vector3(4.5, 0, -2.4), eng: 'Reviso el MDB: ConsumersCurrentCount en 0. Hay que reactivar el consumidor.' };
+    if (m.WaitingForConnectionCurrentCount > 4) return { s: 'warn', who: 'Mandy · gerente', msg: `¡Necesitamos más cajeros! ${m.WaitingForConnectionCurrentCount} clientes esperan conexión.`, rb: 'Revisa WaitingForConnectionCurrentCount contra MaxCapacity; sube la capacidad del pool o revisa consultas lentas en la base de datos.', at: new THREE.Vector3(-1.5, 0, 3.6), eng: 'Reviso la fila: el pool está lleno. Propongo subir MaxCapacity.' };
+    return { s: 'ok', who: 'Mandy · gerente', msg: 'Todo en orden en la sucursal.', rb: '', at: ENG_HOME, eng: '' };
+  }
+  let curAlert = null;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 32), new THREE.MeshBasicMaterial({ color: 0xe5484d, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.visible = false; world.add(ring);
+  function moveEngineer(dt, t) {
+    const target = curAlert ? curAlert.at : ENG_HOME;
+    const d = target.clone().sub(eng.position); d.y = 0;
+    const len = d.length(), step = 2.6 * dt;
+    if (len > 0.05) {
+      d.multiplyScalar(Math.min(step, len) / len); eng.position.add(d);
+      eng.rotation.y = Math.atan2(d.x, d.z);
+      eng.position.y = reduce ? 0 : Math.abs(Math.sin(t * 12)) * 0.07;
+    } else {
+      eng.position.y = 0;
+      eng.rotation.y = curAlert && curAlert.s !== 'ok' ? (curAlert.at.z < 1 ? Math.PI : Math.PI * 0.9) : -0.5;
+    }
+    const alertOn = curAlert && curAlert.s !== 'ok';
+    ring.visible = alertOn;
+    if (alertOn) {
+      ring.position.set(curAlert.at.x, 0.03, curAlert.at.z - (curAlert.at.z < 1 ? 0.6 : 0));
+      const k = reduce ? 1 : 1 + Math.sin(t * 5) * 0.12; ring.scale.set(k, k, k);
+      ring.material.color.setHex(curAlert.s === 'crit' ? 0xe5484d : 0xe9a23b);
+    }
+    engBubble.hidden = !alertOn || len > 0.3;
+  }
+
+  const kpisEl = document.getElementById('kpis');
+  const KPI_DEF = [
+    { lbl: 'Conexiones activas', f: m => `${m.ActiveConnectionsCurrentCount}/${m.CurrCapacity}`, s: m => m.ActiveConnectionsCurrentCount >= POOL_MAX ? 'warn' : 'ok' },
+    { lbl: 'Esperando conexión', f: m => m.WaitingForConnectionCurrentCount, s: m => m.WaitingForConnectionCurrentCount > 4 ? 'warn' : 'ok' },
+    { lbl: 'Mensajes JMS', f: m => m.MessagesCurrentCount, s: m => m.MessagesCurrentCount > 10 ? 'crit' : m.MessagesCurrentCount > 5 ? 'warn' : 'ok' },
+    { lbl: 'Hilos stuck', f: m => m.StuckThreadCount, s: m => m.StuckThreadCount > 0 ? 'crit' : 'ok' }
+  ];
+  const kpiEls = KPI_DEF.map(k => { const d = document.createElement('div'); d.className = 'kpi'; d.innerHTML = `<span class="lbl">${k.lbl}</span><span class="val"></span>`; kpisEl.appendChild(d); return d; });
+
+  let selected = { kind: 'window', idx: 0 };
+  const P = id => document.getElementById(id);
+  function panel(m, al) {
+    const k = selected.kind, i = selected.idx;
+    let eyebrow = '', title = '', st = ['ok', 'Normal'], desc = '', rows = [], rb = '';
+    if (k === 'window') {
+      const w = sim.windows[i];
+      eyebrow = 'Pool JDBC · ds-sucursal'; title = `Ventanilla ${i + 1} · conexión #${i + 1}`;
+      st = w.state === 'busy' ? ['ok', 'Atendiendo'] : w.state === 'leaked' ? ['crit', 'Fugada'] : ['idle', 'Libre'];
+      desc = 'Cada cajero es una conexión del pool. Atiende a un cliente (una petición) y consulta la bóveda (la base de datos).';
+      rows = ['ActiveConnectionsCurrentCount', 'CurrCapacity', 'NumAvailable', 'WaitingForConnectionCurrentCount', 'LeakedConnectionCount', 'ActiveConnectionsHighCount'];
+      if (w.state === 'leaked') rb = 'Esta conexión no se devolvió al pool. Inactive Connection Timeout la recupera; corrige el código que no la cierra.';
+    } else if (k === 'lobby') {
+      eyebrow = 'Work Manager · default'; title = 'Fila de clientes';
+      st = m.QueueLength > 4 ? ['warn', 'Congestión'] : ['ok', 'Fluida'];
+      desc = 'Cada cliente es una petición que entra al servidor. Espera aquí hasta que haya un cajero (conexión) libre.';
+      rows = ['QueueLength', 'ExecuteThreadIdleCount', 'HoggingThreadCount', 'StuckThreadCount'];
+      if (m.QueueLength > 4) rb = al.rb;
+    } else if (k === 'vault') {
+      eyebrow = 'Base de datos'; title = 'Bóveda';
+      st = ['ok', 'Disponible'];
+      desc = 'Donde los cajeros consultan y guardan. Los cubos verdes que viajan son consultas en curso.';
+      rows = ['ActiveConnectionsCurrentCount', 'NumAvailable'];
+    } else if (k === 'jms' || k === 'store') {
+      eyebrow = 'JMS · cola persistente'; title = k === 'jms' ? 'Buzón de correspondencia' : 'File Store';
+      st = m.MessagesCurrentCount > 10 ? ['crit', 'Acumulando'] : m.MessagesCurrentCount > 5 ? ['warn', 'Creciendo'] : ['ok', 'Al día'];
+      desc = k === 'jms' ? 'Algunos clientes dejan un sobre: un mensaje para procesar después. La banda los lleva al MDB.' : 'El archivador guarda los sobres en disco para que no se pierdan si el servidor se reinicia.';
+      rows = ['MessagesCurrentCount', 'MessagesPendingCount', 'MessagesReceivedCount', 'ConsumersCurrentCount'];
+      if (!sim.mdbUp) rb = al.rb;
+    } else if (k === 'mdb') {
+      eyebrow = 'Message-Driven Bean'; title = 'Mesa del MDB';
+      st = sim.mdbUp ? ['ok', 'Consumiendo'] : ['crit', 'Detenido'];
+      desc = 'El empleado que abre y procesa cada sobre de la cola.';
+      rows = ['ConsumersCurrentCount', 'MessagesReceivedCount', 'MessagesCurrentCount'];
+      if (!sim.mdbUp) rb = al.rb;
+    } else if (k === 'error') {
+      eyebrow = 'JMS · cola de error'; title = 'Cola de error';
+      st = m.ErrorMessagesCurrentCount > 0 ? ['crit', 'Con mensajes'] : ['ok', 'Vacía'];
+      desc = 'Los sobres que no se pudieron procesar tras varios reintentos terminan aquí para revisión.';
+      rows = ['ErrorMessagesCurrentCount'];
+      if (m.ErrorMessagesCurrentCount > 0) rb = 'Revisa por qué falló el consumo, corrige y reprocesa los mensajes de la cola de error.';
+    } else if (k === 'mandy' || k === 'engineer') {
+      eyebrow = k === 'mandy' ? 'Gerente de la sucursal' : 'Ingeniero de infraestructura';
+      title = k === 'mandy' ? 'Mandy' : 'Ingeniero de turno';
+      st = [al.s, al.s === 'ok' ? 'Sin alertas' : 'Alerta activa'];
+      desc = k === 'mandy' ? al.msg : 'Propone el siguiente paso del runbook según la alerta de Mandy.';
+      rows = ['ActiveConnectionsCurrentCount', 'WaitingForConnectionCurrentCount', 'StuckThreadCount', 'MessagesCurrentCount'];
+      rb = al.rb;
+    }
+    P('p-eyebrow').textContent = eyebrow; P('p-title').textContent = title;
+    P('p-state').dataset.s = st[0]; P('p-state').textContent = st[1];
+    P('p-desc').textContent = desc;
+    P('p-metrics').innerHTML = rows.map(r => `<div class="metric"><span>${r}</span><span>${m[r]}</span></div>`).join('');
+    P('p-runbook').hidden = !rb; P('p-runbook-text').textContent = rb;
+  }
+
+  // escenarios
+  const scButtons = [...document.querySelectorAll('[data-sc]')];
+  scButtons.forEach(b => b.addEventListener('click', () => {
+    setScenario(b.dataset.sc);
+    scButtons.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+  document.getElementById('reset').addEventListener('click', () => {
+    resetAll(); scButtons.forEach(x => x.setAttribute('aria-pressed', String(x.dataset.sc === 'normal')));
+  });
+
+  // interacción: arrastrar para girar, clic para seleccionar
+  let rot = 0, down = null;
+  const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+  canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, last: e.clientX, moved: 0 }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => {
+    if (!down) return;
+    rot += (e.clientX - down.last) * 0.006; down.moved += Math.abs(e.clientX - down.last); down.last = e.clientX;
+    rot = Math.max(-1.1, Math.min(1.1, rot));
+  });
+  canvas.addEventListener('pointerup', e => {
+    if (down && down.moved < 6) {
+      const r = canvas.getBoundingClientRect();
+      mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(mouse, cam);
+      const hit = ray.intersectObjects(pickables, false)[0];
+      if (hit) selected = { kind: hit.object.userData.kind, idx: hit.object.userData.idx };
+    }
+    down = null;
+  });
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    const view = 8.2, aspect = w / h, hh = aspect < 1.2 ? view * 1.2 / aspect : view;
+    cam.left = -hh * aspect; cam.right = hh * aspect; cam.top = hh; cam.bottom = -hh; cam.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage); resize();
+
+  /* ===================== 4. BUCLE ===================== */
+  const COLORS = { busy: 0x36b37e, idle: 0x9aa8ba, leaked: 0xe5484d };
+  const v = new THREE.Vector3();
+  const place = (el, pos) => {
+    v.copy(pos).applyMatrix4(world.matrixWorld).project(cam);
+    el.style.left = ((v.x + 1) / 2 * stage.clientWidth) + 'px';
+    el.style.top = ((1 - v.y) / 2 * stage.clientHeight) + 'px';
+  };
+  let last = performance.now(), uiT = 0, simAcc = 0;
+  for (let i = 0; i < 3; i++) { const id = sim.nextId++; sim.waiting.push(id); events.onArrive(id); }
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.05); last = now; const t = now / 1000;
+    simAcc += dt; while (simAcc > 0.05) { simStep(0.05); simAcc -= 0.05; }
+    movePeople(dt, t);
+    world.rotation.y += (rot - world.rotation.y) * 0.15;
+    world.updateMatrixWorld();
+
+    sim.windows.forEach((w, i) => {
+      const W = windows[i];
+      W.sign.material.color.setHex(COLORS[w.state]);
+      W.folder.visible = w.state === 'leaked';
+      W.packet.visible = w.state === 'busy';
+      if (w.state === 'busy') {
+        const k = (Math.sin(t * 3 + i) + 1) / 2;
+        W.packet.position.set(W.x + (2.6 - W.x) * k * 0.9, 0.5 + Math.sin(k * Math.PI) * 0.6, -2.8 - k * 1.0);
+      }
+      W.cashier.position.y = w.state === 'leaked' ? 0 : (reduce ? 0 : Math.abs(Math.sin(t * 5 + i)) * (w.state === 'busy' ? 0.04 : 0));
+    });
+    const n = Math.min(sim.jms, envelopes.length);
+    envelopes.forEach((e, k) => {
+      e.visible = k < n;
+      if (e.visible) e.position.z = 1.3 - k * 0.24 - (sim.mdbUp && !reduce ? (t * 0.6) % 0.24 : 0);
+    });
+    errEnvs.forEach((e, k) => { e.visible = k < Math.min(sim.errorQ, errEnvs.length); });
+    mdbLamp.material.color.setHex(sim.mdbUp ? 0x36b37e : 0xe5484d);
+    mdbWorker.rotation.y = sim.mdbUp ? 0 : Math.PI;
+    mHead.rotation.z = reduce ? 0 : Math.sin(t * 1.5) * 0.08;
+    mTail.rotation.y = reduce ? 0 : Math.sin(t * 2.2) * 0.5;
+    wheel.rotation.z = t * 0.5;
+
+    moveEngineer(dt, t);
+    TAGS.forEach(o => place(o.el, o.pos));
+    place(bubble, bubblePos);
+    place(engBubble, v.set(eng.position.x, 1.9, eng.position.z).clone());
+
+    uiT -= dt;
+    if (uiT <= 0) {
+      uiT = 0.2;
+      const m = metrics(), al = alertState(m);
+      KPI_DEF.forEach((k, j) => { kpiEls[j].dataset.s = k.s(m); kpiEls[j].querySelector('.val').textContent = k.f(m); });
+      curAlert = al;
+      bubble.dataset.s = al.s; bubble.innerHTML = `<b>${al.who}</b>${al.msg}`;
+      engBubble.innerHTML = `<b>Ingeniero · runbook</b>${al.eng}`;
+      const live = document.getElementById('live');
+      live.textContent = al.s === 'ok' ? 'Operación normal' : al.s === 'warn' ? 'Atención' : 'Incidente';
+      live.style.background = `var(--${al.s}-soft)`; live.style.color = `var(--${al.s})`;
+      panel(m, al);
+    }
+    renderer.render(scene, cam);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
