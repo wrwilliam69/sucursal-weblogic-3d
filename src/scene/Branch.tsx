@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { RoundedBox, Text } from '@react-three/drei'
 
 const PALETTE = {
@@ -60,17 +61,19 @@ function Sign() {
   return (
     <group>
       <Solid size={[4.4, 0.7, 0.12]} position={[-2, 2.0, -5.15]} color={PALETTE.sign} radius={0.05} />
+      <Suspense fallback={null}>
       <Text
         position={[-2, 2.0, -5.09]}
         fontSize={0.25}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/kenpixel.ttf"
+        font={`${import.meta.env.BASE_URL}fonts/kenpixel.ttf`}
         letterSpacing={0.08}
       >
         SUCURSAL WEBLOGIC
       </Text>
+      </Suspense>
     </group>
   )
 }
