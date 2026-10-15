@@ -1,10 +1,10 @@
-import { RoundedBox } from '@react-three/drei'
+import { RoundedBox, Text } from '@react-three/drei'
 
 const PALETTE = {
-  floor: '#e9eef5',
-  grid: '#d6dee9',
-  wallBack: '#c9d6e8',
-  wallSide: '#bfcde2',
+  floor: '#fffaf2',
+  grid: '#f0e9d6',
+  wallBack: '#ffffff',
+  wallSide: '#ffffff',
   trim: '#3f6fd6',
   sign: '#24407e',
   mat: '#9fb4d6',
@@ -57,7 +57,22 @@ function Room() {
 }
 
 function Sign() {
-  return <Solid size={[4.4, 0.7, 0.12]} position={[-2, 2.0, -5.15]} color={PALETTE.sign} radius={0.05} />
+  return (
+    <group>
+      <Solid size={[4.4, 0.7, 0.12]} position={[-2, 2.0, -5.15]} color={PALETTE.sign} radius={0.05} />
+      <Text
+        position={[-2, 2.0, -5.09]}
+        fontSize={0.25}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        font="/fonts/kenpixel.ttf"
+        letterSpacing={0.08}
+      >
+        SUCURSAL WEBLOGIC
+      </Text>
+    </group>
+  )
 }
 
 function Entrance() {

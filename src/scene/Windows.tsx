@@ -73,31 +73,31 @@ export default function Windows() {
 
   return (
     <group>
-      <Solid size={[10.2, 0.9, 0.7]} position={[-0.5, 0.45, COUNTER_Z]} color="#f4f6fa" />
-      <Solid size={[10.2, 0.08, 0.8]} position={[-0.5, 0.94, COUNTER_Z]} color="#3f6fd6" radius={0.03} />
+      <Solid size={[10.2, 0.7, 0.7]} position={[-0.5, 0.35, COUNTER_Z]} color="#fffaf2" />
+      <Solid size={[10.2, 0.06, 0.75]} position={[-0.5, 0.72, COUNTER_Z]} color="#3f6fd6" radius={0.03} />
 
       {windows.map(i => {
         const x = WIN_X(i)
         return (
           <group key={i}>
-            <Solid size={[0.08, 0.8, 0.5]} position={[x - 0.78, 1.38, COUNTER_Z]} color="#c4d1e4" radius={0.03} />
+            <Solid size={[0.08, 0.8, 0.5]} position={[x - 0.78, 1.18, COUNTER_Z]} color="#d9e2f3" radius={0.03} />
 
-            <mesh position={[x, 1.35, COUNTER_Z + 0.15]}>
+            <mesh position={[x, 1.15, COUNTER_Z + 0.15]}>
               <boxGeometry args={[1.4, 0.7, 0.04]} />
-              <meshStandardMaterial color="#bfe0ff" transparent opacity={0.35} roughness={0.1} metalness={0} />
+              <meshStandardMaterial color="#cfe7ff" transparent opacity={0.45} roughness={0.05} metalness={0.1} />
             </mesh>
 
             <RoundedBox
               ref={el => {
                 signRefs.current[i] = el
               }}
-              args={[0.9, 0.26, 0.08]}
-              radius={0.03}
+              args={[1.1, 0.32, 0.12]}
+              radius={0.04}
               smoothness={4}
-              position={[x, 1.95, COUNTER_Z]}
+              position={[x, 1.75, COUNTER_Z]}
               castShadow
             >
-              <meshStandardMaterial color={COLORS.idle} roughness={0.5} metalness={0} />
+              <meshStandardMaterial color={COLORS.idle} roughness={0.4} metalness={0} />
             </RoundedBox>
 
             <Chibi
@@ -116,7 +116,7 @@ export default function Windows() {
               args={[0.3, 0.06, 0.22]}
               radius={0.02}
               smoothness={4}
-              position={[x + 0.22, 0.98, COUNTER_Z - 0.35]}
+              position={[x + 0.22, 0.78, COUNTER_Z - 0.35]}
               castShadow
               visible={false}
             >

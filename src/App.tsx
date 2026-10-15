@@ -34,7 +34,7 @@ function Scene() {
         shadow-camera-far={50}
       />
 
-      <group position={[0, 0, 0]}>
+      <group position={[0, 0, 0]} scale={0.8}>
         <Branch />
         <Windows />
         <Vault />
@@ -63,7 +63,7 @@ export default function App() {
 
   return (
     <Canvas shadows orthographic>
-      <OrthographicCamera makeDefault position={[camX, camY, camZ]} zoom={52} near={0.1} far={200} />
+      <OrthographicCamera makeDefault position={[camX, camY, camZ]} zoom={70} near={0.1} far={200} />
       <OrbitControls
         makeDefault
         target={TARGET}

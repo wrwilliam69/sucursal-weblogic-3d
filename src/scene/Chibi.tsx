@@ -43,7 +43,7 @@ const Chibi = forwardRef<Group, ChibiProps>(function Chibi(
   ref
 ) {
   return (
-    <group ref={ref} {...props}>
+    <group ref={ref} {...props} scale={1.6}>
       <Part size={[0.13, 0.2, 0.17]} position={[-0.09, 0.1, 0]} color={PANTS} />
       <Part size={[0.13, 0.2, 0.17]} position={[0.09, 0.1, 0]} color={PANTS} />
 
