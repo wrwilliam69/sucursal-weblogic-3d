@@ -1,8 +1,15 @@
-import type { Metrics, Alert, ScenarioName } from './types'
-import { createSimState, simStep, setScenario, resetAll, metrics as simMetrics } from './simulator'
+import type { Metrics, Alert, ScenarioName, WindowState } from './types'
+import { createSimState, simStep, setScenario, resetAll, metrics as simMetrics, windowStates } from './simulator'
 import { computeAlert } from './alerts'
 
-export type MetricsSubscriber = (data: { metrics: Metrics; alert: Alert; scenario: ScenarioName }) => void
+export interface MetricsSnapshot {
+  metrics: Metrics
+  alert: Alert
+  scenario: ScenarioName
+  windows: WindowState[]
+}
+
+export type MetricsSubscriber = (data: MetricsSnapshot) => void
 
 export interface MetricsSource {
   start(): void
@@ -34,7 +41,12 @@ export class SimulatorSource implements MetricsSource {
     const m = simMetrics(this.simState)
     const leakedIdx = this.simState.windows.findIndex(w => w.state === 'leaked')
     const alert = computeAlert(m, { leakedIndex: leakedIdx, mdbUp: this.simState.mdbUp })
-    const payload = { metrics: m, alert, scenario: this.simState.scenario as ScenarioName }
+    const payload: MetricsSnapshot = {
+      metrics: m,
+      alert,
+      scenario: this.simState.scenario as ScenarioName,
+      windows: windowStates(this.simState)
+    }
     for (const sub of this.subs) {
       sub(payload)
     }

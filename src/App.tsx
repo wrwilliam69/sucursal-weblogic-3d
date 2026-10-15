@@ -1,6 +1,10 @@
+import { useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, Environment, Lightformer, OrbitControls, OrthographicCamera } from '@react-three/drei'
 import Branch from './scene/Branch'
+import Windows from './scene/Windows'
+import Vault from './scene/Vault'
+import { useStore } from './store/useStore'
 
 const ISO_POLAR = Math.atan(Math.SQRT2)
 const CAM_RADIUS = 26
@@ -32,6 +36,8 @@ function Scene() {
 
       <group position={[0, 0, 0]}>
         <Branch />
+        <Windows />
+        <Vault />
       </group>
 
       <ContactShadows position={[0, 0.02, -0.25]} opacity={0.32} scale={34} blur={2.4} far={5} resolution={512} color="#5a6b82" />
@@ -47,6 +53,14 @@ function Scene() {
 }
 
 export default function App() {
+  useEffect(() => {
+    useStore.getState().start()
+    if (import.meta.env.DEV) {
+      ;(window as Window & { sucursal?: typeof useStore }).sucursal = useStore
+    }
+    return () => useStore.getState().stop()
+  }, [])
+
   return (
     <Canvas shadows orthographic>
       <OrthographicCamera makeDefault position={[camX, camY, camZ]} zoom={52} near={0.1} far={200} />

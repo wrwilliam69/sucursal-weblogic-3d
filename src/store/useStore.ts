@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { MetricsSource } from '../data/source'
 import { SimulatorSource } from '../data/source'
-import type { Metrics, Alert, ScenarioName } from '../data/types'
+import type { Metrics, Alert, ScenarioName, WindowState } from '../data/types'
 
 const EMPTY_METRICS: Metrics = {
   ActiveConnectionsCurrentCount: 0,
@@ -34,6 +34,7 @@ interface StoreState {
   metrics: Metrics
   alert: Alert
   scenario: ScenarioName
+  windows: WindowState[]
   running: boolean
   source: MetricsSource
   setScenario: (sc: ScenarioName) => void
@@ -49,6 +50,7 @@ export const useStore = create<StoreState>((set, get) => ({
   metrics: EMPTY_METRICS,
   alert: OK_ALERT,
   scenario: 'normal',
+  windows: [],
   running: false,
   source: defaultSource,
   setScenario: (sc: ScenarioName) => {
@@ -69,12 +71,12 @@ export const useStore = create<StoreState>((set, get) => ({
   setSource: (src: MetricsSource) => {
     activeUnsub?.()
     set({ source: src, running: false })
-    activeUnsub = src.subscribe(({ metrics, alert, scenario }) => {
-      useStore.setState({ metrics, alert, scenario })
+    activeUnsub = src.subscribe(({ metrics, alert, scenario, windows }) => {
+      useStore.setState({ metrics, alert, scenario, windows })
     })
   }
 }))
 
-let activeUnsub: (() => void) | null = defaultSource.subscribe(({ metrics, alert, scenario }) => {
-  useStore.setState({ metrics, alert, scenario })
+let activeUnsub: (() => void) | null = defaultSource.subscribe(({ metrics, alert, scenario, windows }) => {
+  useStore.setState({ metrics, alert, scenario, windows })
 })

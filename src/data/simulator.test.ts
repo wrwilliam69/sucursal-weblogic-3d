@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createSimState, setScenario, resetAll, simStep, metrics, POOL_MAX } from './simulator'
+import { createSimState, setScenario, resetAll, simStep, metrics, windowStates, POOL_MAX } from './simulator'
 
 describe('simulator', () => {
   it('reset libera conexiones fugadas y vacía cola de error', () => {
@@ -48,6 +48,17 @@ describe('simulator', () => {
     expect(receivedReqId).toBe(reqId)
     expect(receivedReqId).not.toBe(0)
     expect(s.windows[0].state).toBe('idle')
+  })
+
+  it('windowStates refleja el estado de cada ventanilla', () => {
+    const s = createSimState()
+    s.windows[0].state = 'busy'
+    s.windows[1].state = 'leaked'
+    const states = windowStates(s)
+    expect(states).toHaveLength(POOL_MAX)
+    expect(states[0]).toBe('busy')
+    expect(states[1]).toBe('leaked')
+    expect(states[2]).toBe('idle')
   })
 
   it('metrics calcula correctamente', () => {

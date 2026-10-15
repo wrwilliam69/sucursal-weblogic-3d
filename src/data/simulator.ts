@@ -1,6 +1,7 @@
 import type { Metrics, ScenarioName, WindowState } from './types'
+import { WINDOW_COUNT } from './layout'
 
-export const POOL_MAX = 6
+export const POOL_MAX = WINDOW_COUNT
 export const THREADS = 12
 export interface Window {
   state: WindowState
@@ -122,6 +123,8 @@ export const metrics = (state: SimState): Metrics => {
     ErrorMessagesCurrentCount: state.errorQ
   }
 }
+
+export const windowStates = (state: SimState): WindowState[] => state.windows.map(w => w.state)
 
 export const simStep = (state: SimState, dt: number, hooks: SimHooks = {}, rand: () => number = Math.random) => {
   state.spawnT -= dt
